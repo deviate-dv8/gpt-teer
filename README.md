@@ -1,2 +1,2 @@
 # gpt-teer
-A rework to my semi-depricated projectgpt-wright project 
+A rework to my semi-depricated project gpt-wright project 
