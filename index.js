@@ -438,22 +438,24 @@ let browserType = "chrome";
 let port = 8080;
 let headless = true;
 let screenshot = false;
+
+// Loop through process.argv to find arguments for port and browser
+process.argv.forEach((arg, index) => {
+  if (arg === "-p" && process.argv[index + 1]) {
+    port = parseInt(process.argv[index + 1], 10);
+  }
+  if (arg === "-b" && process.argv[index + 1]) {
+    browser = process.argv[index + 1].toLowerCase(); // Make browser name lowercase for consistency
+  }
+  if (arg === "--no-headless") {
+    headless = false;
+  }
+  if (arg === "--screenshot") {
+    screenshot = true;
+  }
+});
+
 browserInit().then(() => {
-  // Loop through process.argv to find arguments for port and browser
-  process.argv.forEach((arg, index) => {
-    if (arg === "-p" && process.argv[index + 1]) {
-      port = parseInt(process.argv[index + 1], 10);
-    }
-    if (arg === "-b" && process.argv[index + 1]) {
-      browser = process.argv[index + 1].toLowerCase(); // Make browser name lowercase for consistency
-    }
-    if (arg === "--no-headless" && process.argv[index + 1]) {
-      headless = process.argv[index + 1] === "true";
-    }
-    if (arg === "--screenshot" && process.argv[index + 1]) {
-      screenshot = process.argv[index + 1] === true;
-    }
-  });
   app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
   });
