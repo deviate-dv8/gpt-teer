@@ -30,4 +30,4 @@ Disclaimer: This must be used with caution as abuse on the OpenAI server may res
 
 Chatbots: This project can be used for simple application like chatbots
 
-Synthetic Data Generation: This project is currently used in generating basic conversation data for thesis "Enhancing Language Model Efficiency through Sequence-Level Knowledge Distillation with Sparse Transformers"
+Synthetic Data Generation: This project is currently used in generating basic conversation data for thesis "Enhancing Language Model Efficiency through Sequence-Level Knowledge Distillation with Sparse Transformers" by Ronald John Atanoso and Dan Victor Lofranco
