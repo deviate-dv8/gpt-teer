@@ -386,7 +386,8 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       console.log(`screenshots/4parsing-text-${chatId}.png`);
     }
 
-    let parsedText = text.replace("ChatGPT\n\n", "").trim();
+    let parsedText = text.replace("ChatGPT said:\nChatGPT\n\n", "").trim();
+    parsedText = parsedText.replace("\n\n4o mini", "");
 
     if (
       parsedText ==
