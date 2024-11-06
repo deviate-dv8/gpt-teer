@@ -25,3 +25,9 @@ Applies parallel API calls with each dependent Chat ID to have a 'Queue middlewa
 This process uses ChatGPT no logins prompts which is similar to doing OPEN AI chat_completion API but free (but lacks the ability to fine tune)
 
 Disclaimer: This must be used with caution as abuse on the OpenAI server may result in rate limiting issues based on IPs
+
+# Usecases
+
+Chatbots: This project can be used for simple application like chatbots
+
+Synthetic Data Generation: This project is currently used in generating basic conversation data for thesis "Enhancing Language Model Efficiency through Sequence-Level Knowledge Distillation with Sparse Transformers"
