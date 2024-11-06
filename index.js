@@ -34,7 +34,7 @@ async function chromiumInit() {
   }
 }
 
-async function playWrightInit(chatId) {
+async function puppeteerInit(chatId) {
   try {
     if (conversations[chatId] && conversations[chatId].page) {
       console.log(`Reusing existing page for chat ${chatId}`);
@@ -47,7 +47,7 @@ async function playWrightInit(chatId) {
     await page.goto("https://www.chatgpt.com").catch(async (err) => {
       console.log("Re Run");
       await page.close();
-      return await playWrightInit(chatId);
+      return await puppeteerInit(chatId);
     });
 
     await stayLoggedOut(page);
@@ -55,12 +55,12 @@ async function playWrightInit(chatId) {
     const checkContent = await page.$("text=" + "Get started");
     if (checkContent) {
       console.log("Re run");
-      return await playWrightInit(chatId);
+      return await puppeteerInit(chatId);
     }
     const checkContent2 = await page.$("text=" + "Welcome back");
     if (checkContent2) {
       console.log("Re run");
-      return await playWrightInit(chatId);
+      return await puppeteerInit(chatId);
     }
     conversations[chatId] = {
       page,
@@ -83,7 +83,7 @@ async function playWrightInit(chatId) {
   } catch {
     numErr++;
     await handleGlobalError();
-    return playWrightInit(chatId);
+    return puppeteerInit(chatId);
   }
 }
 
@@ -172,7 +172,7 @@ app.get("/", (req, res) => {
 
 app.post("/start", async (req, res) => {
   const chatId = generateUniqueChatId();
-  await playWrightInit(chatId);
+  await puppeteerInit(chatId);
   res.json({ chatId });
 });
 
