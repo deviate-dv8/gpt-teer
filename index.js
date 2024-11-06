@@ -3,7 +3,6 @@ const stealth = require("puppeteer-extra-plugin-stealth")();
 const dotenv = require("dotenv");
 const express = require("express");
 dotenv.config();
-console.log(process.env.HEADLESS);
 puppeteer.use(stealth);
 const INACTIVITY_TIMEOUT =
   (process.env.INACTIVITY_TIMEOUT_MINUTE
@@ -20,7 +19,7 @@ async function browserInit() {
   try {
     if (!browser) {
       console.log(
-        `Launching ${browserInit == "chrome" ? "Chromium" : "Firefox"}`
+        `Launching ${browserType == "chrome" ? "Chromium" : "Firefox"}`
       );
       if (process.env.HEADLESS != "true") {
         browser = await puppeteer.launch({
