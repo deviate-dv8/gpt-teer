@@ -22,8 +22,8 @@ async function browserInit() {
         `Launching ${browserType == "chrome" ? "Chromium" : "Firefox"}`
       );
       browser = await puppeteer.launch({
-        headless: false,
-        browser: process.env.HEADLESS != "true",
+        headless: process.env.HEADLESS == "true",
+        browser: browserType,
       });
     }
   } catch {
