@@ -22,7 +22,7 @@ async function browserInit() {
         `Launching ${browserType == "chrome" ? "Chromium" : "Firefox"}`
       );
       browser = await puppeteer.launch({
-        headless: process.env.HEADLESS == "true",
+        headless,
         browser: browserType,
       });
     }
@@ -72,7 +72,7 @@ async function puppeteerInit(chatId) {
         closeChatSession(chatId);
       }, INACTIVITY_TIMEOUT),
     };
-    if (process.env.DEBUG == "true") {
+    if (screenshot) {
       await page.screenshot({
         path: `screenshots/init-${chatId}.png`,
       });
@@ -250,7 +250,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       return "You've reached our limit of messages per hour. Please try again later.";
     }
     await stayLoggedOut(page);
-    if (process.env.DEBUG == "true") {
+    if (screenshot) {
       await page.screenshot({
         path: `screenshots/1before-writing-${chatId}.png`,
       });
@@ -261,7 +261,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         ? parseInt(process.env.WAIT_TIMEOUT)
         : 300000,
     });
-    if (process.env.DEBUG == "true") {
+    if (screenshot) {
       await page.screenshot({
         path: `screenshots/2writing-before-clicking-${chatId}.png`,
       });
@@ -280,7 +280,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         ? parseInt(process.env.WAIT_TIMEOUT)
         : 300000,
     });
-    if (process.env.DEBUG == "true") {
+    if (screenshot) {
       await page.screenshot({
         path: `screenshots/3after-clicking-${chatId}.png`,
       });
@@ -320,7 +320,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       await closeChatSession(chatId);
       return "You've reached our limit of messages per hour. Please try again later.";
     }
-    if (process.env.DEBUG == "true") {
+    if (screenshot) {
       await page.screenshot({
         path: `screenshots/4after-streaming-${chatId}.png`,
       });
@@ -373,7 +373,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       text = await lazyLoadingFix(page, chatSession.conversation);
     }
 
-    if (process.env.DEBUG == "true") {
+    if (screenshot) {
       await page.screenshot({
         path: `screenshots/4parsing-text-${chatId}.png`,
       });
@@ -436,6 +436,8 @@ app.use((err, req, res, next) => {
 
 let browserType = "chrome";
 let port = 8080;
+let headless = true;
+let screenshot = false;
 browserInit().then(() => {
   // Loop through process.argv to find arguments for port and browser
   process.argv.forEach((arg, index) => {
@@ -444,6 +446,12 @@ browserInit().then(() => {
     }
     if (arg === "-b" && process.argv[index + 1]) {
       browser = process.argv[index + 1].toLowerCase(); // Make browser name lowercase for consistency
+    }
+    if (arg === "--no-headless" && process.argv[index + 1]) {
+      headless = process.argv[index + 1] === "true";
+    }
+    if (arg === "--screenshot" && process.argv[index + 1]) {
+      screenshot = process.argv[index + 1] === true;
     }
   });
   app.listen(port, () => {
