@@ -16,21 +16,26 @@ let conversations = {};
 let requestQueues = {};
 let numErr = 0;
 
-async function chromiumInit() {
+async function browserInit() {
   try {
     if (!browser) {
       console.log("Launching Chromium");
-      if (process.env.HEADLESS == "true") {
-        browser = await puppeteer.launch({ headless: false });
+      if (process.env.HEADLESS != "true") {
+        browser = await puppeteer.launch({
+          headless: false,
+          browser: browserType,
+        });
       } else {
-        browser = await puppeteer.launch();
+        browser = await puppeteer.launch({
+          browser: browserType,
+        });
       }
     }
   } catch {
     numErr++;
     await handleGlobalError();
     console.log("Failed to launch re-run browser");
-    chromiumInit();
+    browserInit();
   }
 }
 
@@ -432,8 +437,19 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: "Internal server error" });
 });
-chromiumInit().then(() => {
-  const port = 8080;
+
+const browserType = "chrome";
+const port = 8080;
+browserInit().then(() => {
+  // Loop through process.argv to find arguments for port and browser
+  process.argv.forEach((arg, index) => {
+    if (arg === "-p" && process.argv[index + 1]) {
+      port = parseInt(process.argv[index + 1], 10);
+    }
+    if (arg === "-b" && process.argv[index + 1]) {
+      browser = process.argv[index + 1].toLowerCase(); // Make browser name lowercase for consistency
+    }
+  });
   app.listen(port, () => {
     console.log(`Server is listening on port ${port}`);
   });
