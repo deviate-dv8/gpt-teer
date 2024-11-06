@@ -21,16 +21,10 @@ async function browserInit() {
       console.log(
         `Launching ${browserType == "chrome" ? "Chromium" : "Firefox"}`
       );
-      if (process.env.HEADLESS != "true") {
-        browser = await puppeteer.launch({
-          headless: false,
-          browser: browserType,
-        });
-      } else {
-        browser = await puppeteer.launch({
-          browser: browserType,
-        });
-      }
+      browser = await puppeteer.launch({
+        headless: false,
+        browser: process.env.HEADLESS != "true",
+      });
     }
   } catch {
     numErr++;
