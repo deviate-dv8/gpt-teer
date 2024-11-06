@@ -1,6 +1,6 @@
 # gpt-teer
 
-A rework to my semi-depricated project gpt-wright project
+A rework to my depricated project gpt-wright project, Puppeteer have better stealth-mode integration than playwright
 
 ### ChatGPT 4o mini/3.5 Turbo reverse proxy with Chromium/Firefox based Puppeteer, Express REST-API, A free non-fine-tunable REST-API alternative for GPT chat completion API
 
