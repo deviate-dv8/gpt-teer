@@ -19,7 +19,9 @@ let numErr = 0;
 async function browserInit() {
   try {
     if (!browser) {
-      console.log("Launching Chromium");
+      console.log(
+        `Launching ${browserInit == "chrome" ? "Chromium" : "Firefox"}`
+      );
       if (process.env.HEADLESS != "true") {
         browser = await puppeteer.launch({
           headless: false,
@@ -438,8 +440,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: "Internal server error" });
 });
 
-const browserType = "chrome";
-const port = 8080;
+let browserType = "chrome";
+let port = 8080;
 browserInit().then(() => {
   // Loop through process.argv to find arguments for port and browser
   process.argv.forEach((arg, index) => {
