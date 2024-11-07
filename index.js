@@ -326,13 +326,13 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       });
       console.log(`screenshots/4after-streaming-${chatId}.png`);
     }
-    await page.waitForSelector('[data-testid="stop-button"]', {
+    await page.waitForSelector('button[aria-label="Stop streaming"]', {
       timeout: process.env.WAIT_TIMEOUT
         ? parseInt(process.env.WAIT_TIMEOUT)
         : 60000,
     });
 
-    await page.waitForSelector('[data-testid="stop-button"]', {
+    await page.waitForSelector('button[aria-label="Stop streaming"]', {
       hidden: true,
       timeout: process.env.WAIT_TIMEOUT
         ? parseInt(process.env.WAIT_TIMEOUT)
