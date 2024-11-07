@@ -64,6 +64,7 @@ async function puppeteerInit(chatId) {
       console.log("Re run");
       return await puppeteerInit(chatId);
     }
+
     conversations[chatId] = {
       page,
       conversation: 1,
