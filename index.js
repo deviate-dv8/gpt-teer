@@ -1,9 +1,11 @@
 const puppeteer = require("puppeteer-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
+const anonymize = require("puppeteer-extra-plugin-anonymize-ua")();
 const dotenv = require("dotenv");
 const express = require("express");
 dotenv.config();
 puppeteer.use(stealth);
+puppeteer.use(anonymize);
 const INACTIVITY_TIMEOUT =
   (process.env.INACTIVITY_TIMEOUT_MINUTE
     ? parseInt(process.env.INACTIVITY_TIMEOUT_MINUTE)
