@@ -1,6 +1,7 @@
 const puppeteer = require("puppeteer-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
 const anonymize = require("puppeteer-extra-plugin-anonymize-ua")();
+const randomUserAgent = require("random-useragent");
 const dotenv = require("dotenv");
 const express = require("express");
 dotenv.config();
@@ -26,7 +27,8 @@ async function browserInit() {
       browser = await puppeteer.launch({
         headless,
         browser: browserType,
-        pipe: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        // pipe: true,
       });
     }
   } catch {
@@ -46,6 +48,31 @@ async function puppeteerInit(chatId) {
 
     console.log(`Creating new page for chat ${chatId}`);
     const page = await browser.newPage();
+
+    const userAgent = randomUserAgent.getRandom();
+    await page.setUserAgent(userAgent);
+
+    // Set a random viewport size
+    await page.setViewport({
+      width: Math.floor(Math.random() * (1920 - 800 + 1)) + 800,
+      height: Math.floor(Math.random() * (1080 - 600 + 1)) + 600,
+    });
+
+    // Set other random browser fingerprints
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, "platform", {
+        get: () => "Win32",
+      });
+      Object.defineProperty(navigator, "language", {
+        get: () => "en-US",
+      });
+      Object.defineProperty(navigator, "languages", {
+        get: () => ["en-US", "en"],
+      });
+      Object.defineProperty(navigator, "webdriver", {
+        get: () => false,
+      });
+    });
 
     await page.goto("https://www.chatgpt.com").catch(async (err) => {
       console.log("Re Run");
@@ -367,7 +394,6 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         `[data-testid="conversation-turn-${chatSession.conversation}"]`
       )
     );
-    // console.log(text);
 
     const textCheck = text.split(" ");
     if (textCheck[0] == "ChatGPT\n\n" && textCheck.length <= 1) {
