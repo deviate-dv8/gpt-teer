@@ -57,6 +57,7 @@ async function puppeteerInit(chatId) {
 
     const userAgent = new UserAgent({ deviceCategory: "desktop" });
     const randomUserAgent = userAgent.toString();
+    console.log(randomUserAgent);
 
     await page.setUserAgent(randomUserAgent);
 
