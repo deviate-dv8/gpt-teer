@@ -25,6 +25,8 @@
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-anonymize-ua": "^2.4.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
-    "random-useragent": "^0.5.0"
+    "rand-user-agent": "^2.0.82",
+    "random-useragent": "^0.5.0",
+    "user-agents": "^1.1.352"
   }
 }

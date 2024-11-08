@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer-extra");
 const stealth = require("puppeteer-extra-plugin-stealth")();
 const anonymize = require("puppeteer-extra-plugin-anonymize-ua")();
-const randomUserAgent = require("random-useragent");
+const { UserAgent, random } = require("user-agents");
 const dotenv = require("dotenv");
 const express = require("express");
 dotenv.config();
@@ -49,8 +49,9 @@ async function puppeteerInit(chatId) {
     console.log(`Creating new page for chat ${chatId}`);
     const page = await browser.newPage();
 
-    const userAgent = randomUserAgent.getRandom();
-    await page.setUserAgent(userAgent);
+    const userAgent = new UserAgent({ deviceCategory: "desktop" });
+    const randomUserAgent = userAgent.toString();
+    await page.setUserAgent(randomUserAgent);
 
     // Set a random viewport size
     await page.setViewport({
