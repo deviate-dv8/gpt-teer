@@ -13,8 +13,8 @@ const INACTIVITY_TIMEOUT =
   60 *
   1000; // 25 minutes
 let browser = null;
-let conversations = {};
-let requestQueues = {};
+const conversations = {};
+const requestQueues = {};
 let numErr = 0;
 
 async function browserInit() {
@@ -26,6 +26,7 @@ async function browserInit() {
       browser = await puppeteer.launch({
         headless,
         browser: browserType,
+        pipe: true,
       });
     }
   } catch {
@@ -262,7 +263,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
     await page.type("#prompt-textarea", prompt, {
       timeout: process.env.WAIT_TIMEOUT
         ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
+        : 60000,
     });
     if (screenshot) {
       await page.screenshot({
@@ -274,14 +275,14 @@ async function scrapeAndAutomateChat(chatId, prompt) {
     await page.waitForSelector('[data-testid="send-button"]:not([disabled])', {
       timeout: process.env.WAIT_TIMEOUT
         ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
+        : 60000,
     });
 
     // Then click the button
     await page.click('button[aria-label="Send prompt"]', {
       timeout: process.env.WAIT_TIMEOUT
         ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
+        : 60000,
     });
     if (screenshot) {
       await page.screenshot({
@@ -289,19 +290,34 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       });
       console.log(`screenshots/3after-clicking-${chatId}.png`);
     }
+    // Waits for the button to change logo
+    await page.waitForSelector('button[aria-label="Stop streaming"]', {
+      timeout: process.env.WAIT_TIMEOUT
+        ? parseInt(process.env.WAIT_TIMEOUT)
+        : 60000,
+    });
+    // Waits for the button logo to change back
+    await page.waitForSelector('button[aria-label="Stop streaming"]', {
+      hidden: true,
+      timeout: process.env.WAIT_TIMEOUT
+        ? parseInt(process.env.WAIT_TIMEOUT)
+        : 60000,
+    });
+
+    // Waits for the response to be generated
     await page.waitForSelector(".result-thinking", {
       hidden: true,
       timeout: process.env.WAIT_TIMEOUT
         ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
+        : 300000,
     });
-    // Wait for the ".result-streaming" element to be hidden
     await page.waitForSelector(".result-streaming", {
       hidden: true,
       timeout: process.env.WAIT_TIMEOUT
         ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
+        : 300000,
     });
+
     const limitCheck = await page.$(
       'text="You\'ve reached our limit of messages per hour. Please try again later."'
     );
@@ -329,24 +345,6 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       });
       console.log(`screenshots/4after-streaming-${chatId}.png`);
     }
-    await page.waitForSelector('button[aria-label="Stop streaming"]', {
-      timeout: process.env.WAIT_TIMEOUT
-        ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
-    });
-
-    await page.waitForSelector('button[aria-label="Stop streaming"]', {
-      hidden: true,
-      timeout: process.env.WAIT_TIMEOUT
-        ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
-    });
-    await page.waitForSelector(".result-streaming", {
-      hidden: true,
-      timeout: process.env.WAIT_TIMEOUT
-        ? parseInt(process.env.WAIT_TIMEOUT)
-        : 120000,
-    });
     chatSession.conversation += 2;
     if (chatSession.conversation == 3) {
       let text1 = await page.evaluate(
