@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "dev": "nodemon .",
     "dev:slow": "node . --max-old-space-size=500 `which npm` install"

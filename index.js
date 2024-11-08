@@ -1,10 +1,16 @@
-const puppeteer = require("puppeteer-extra");
-const stealth = require("puppeteer-extra-plugin-stealth")();
-const anonymize = require("puppeteer-extra-plugin-anonymize-ua")();
-const { UserAgent, random } = require("user-agents");
-const dotenv = require("dotenv");
-const express = require("express");
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import AnonymizeUAPlugin from "puppeteer-extra-plugin-anonymize-ua";
+import UserAgent from "user-agents";
+import dotenv from "dotenv";
+import express from "express";
+
 dotenv.config();
+
+// Instantiate the plugins
+const stealth = StealthPlugin();
+const anonymize = AnonymizeUAPlugin();
+
 puppeteer.use(stealth);
 puppeteer.use(anonymize);
 const INACTIVITY_TIMEOUT =
@@ -51,6 +57,7 @@ async function puppeteerInit(chatId) {
 
     const userAgent = new UserAgent({ deviceCategory: "desktop" });
     const randomUserAgent = userAgent.toString();
+
     await page.setUserAgent(randomUserAgent);
 
     // Set a random viewport size
