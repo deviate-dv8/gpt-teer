@@ -16,9 +16,9 @@ puppeteer.use(anonymize);
 const INACTIVITY_TIMEOUT =
   (process.env.INACTIVITY_TIMEOUT_MINUTE
     ? parseInt(process.env.INACTIVITY_TIMEOUT_MINUTE)
-    : 25) *
+    : 3) *
   60 *
-  1000; // 25 minutes
+  1000;
 let browser = null;
 const conversations = {};
 const requestQueues = {};
