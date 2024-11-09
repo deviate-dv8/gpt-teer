@@ -4,15 +4,16 @@ import AnonymizeUAPlugin from "puppeteer-extra-plugin-anonymize-ua";
 import UserAgent from "user-agents";
 import dotenv from "dotenv";
 import express from "express";
+import process from "process";
 
 dotenv.config();
 
-// Instantiate the plugins
 const stealth = StealthPlugin();
 const anonymize = AnonymizeUAPlugin();
 
 puppeteer.use(stealth);
 puppeteer.use(anonymize);
+
 const INACTIVITY_TIMEOUT =
   (process.env.INACTIVITY_TIMEOUT_MINUTE
     ? parseInt(process.env.INACTIVITY_TIMEOUT_MINUTE)
@@ -23,6 +24,32 @@ let browser = null;
 const conversations = {};
 const requestQueues = {};
 let numErr = 0;
+let stopFetching = false;
+
+function signalHandler(signal) {
+  console.log(`Received ${signal}. Initiating graceful shutdown...`);
+  stopFetching = true;
+  if (browser) {
+    browser
+      .close()
+      .then(() => {
+        console.log("Browser closed.");
+        process.exit(0);
+      })
+      .catch((err) => {
+        console.error("Error closing browser:", err);
+        process.exit(1);
+      });
+  } else {
+    process.exit(0);
+  }
+}
+
+// Handle SIGINT signals for Ctrl+C
+process.on("SIGINT", signalHandler);
+
+// Handle custom signal (e.g., SIGUSR1) from frunner.sh
+process.on("SIGUSR1", signalHandler); // Found out that OS kills some of the process because of false positive during initialization (beacuse cpu usage goes for 100% for a few seconds)
 
 async function browserInit() {
   try {
@@ -48,6 +75,8 @@ async function browserInit() {
 const MAX_RETRIES = 10;
 
 async function puppeteerInit(chatId, retries = 0) {
+  if (stopFetching) return;
+
   try {
     if (conversations[chatId] && conversations[chatId].page) {
       console.log(`Reusing existing page for chat ${chatId}`);
@@ -62,13 +91,11 @@ async function puppeteerInit(chatId, retries = 0) {
     console.log(`Using user agent: ${randomUserAgent}`);
     await page.setUserAgent(randomUserAgent);
 
-    // Set a random viewport size
     await page.setViewport({
       width: Math.floor(Math.random() * (1920 - 800 + 1)) + 800,
       height: Math.floor(Math.random() * (1080 - 600 + 1)) + 600,
     });
 
-    // Set other random browser fingerprints
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, "platform", {
         get: () => "Win32",
