@@ -45,7 +45,9 @@ async function browserInit() {
   }
 }
 
-async function puppeteerInit(chatId) {
+const MAX_RETRIES = 10;
+
+async function puppeteerInit(chatId, retries = 0) {
   try {
     if (conversations[chatId] && conversations[chatId].page) {
       console.log(`Reusing existing page for chat ${chatId}`);
@@ -57,8 +59,7 @@ async function puppeteerInit(chatId) {
 
     const userAgent = new UserAgent({ deviceCategory: "desktop" });
     const randomUserAgent = userAgent.toString();
-    console.log(randomUserAgent);
-
+    console.log(`Using user agent: ${randomUserAgent}`);
     await page.setUserAgent(randomUserAgent);
 
     // Set a random viewport size
@@ -86,7 +87,11 @@ async function puppeteerInit(chatId) {
     await page.goto("https://www.chatgpt.com").catch(async (err) => {
       console.log("Re Run");
       await page.close();
-      return await puppeteerInit(chatId);
+      if (retries < MAX_RETRIES) {
+        return await puppeteerInit(chatId, retries + 1);
+      } else {
+        throw new Error("Max retries reached");
+      }
     });
 
     await stayLoggedOut(page);
@@ -94,12 +99,22 @@ async function puppeteerInit(chatId) {
     const checkContent = await page.$("text=" + "Get started");
     if (checkContent) {
       console.log("Re run");
-      return await puppeteerInit(chatId);
+      await page.close();
+      if (retries < MAX_RETRIES) {
+        return await puppeteerInit(chatId, retries + 1);
+      } else {
+        throw new Error("Max retries reached");
+      }
     }
     const checkContent2 = await page.$("text=" + "Welcome back");
     if (checkContent2) {
       console.log("Re run");
-      return await puppeteerInit(chatId);
+      await page.close();
+      if (retries < MAX_RETRIES) {
+        return await puppeteerInit(chatId, retries + 1);
+      } else {
+        throw new Error("Max retries reached");
+      }
     }
 
     conversations[chatId] = {
@@ -120,10 +135,17 @@ async function puppeteerInit(chatId) {
     }
     requestQueues[chatId] = Promise.resolve();
     console.log(`Page is ready for chat ${chatId}`);
-  } catch {
+  } catch (error) {
     numErr++;
     await handleGlobalError();
-    return puppeteerInit(chatId);
+    if (retries < MAX_RETRIES) {
+      console.log(
+        `Retrying puppeteerInit for chat ${chatId}, attempt ${retries + 1}`
+      );
+      return puppeteerInit(chatId, retries + 1);
+    } else {
+      console.error(`Max retries reached for chat ${chatId}:`, error);
+    }
   }
 }
 
