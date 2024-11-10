@@ -85,6 +85,10 @@ async function puppeteerInit(chatId, retries = 0) {
 
     console.log(`Creating new page for chat ${chatId}`);
     const page = await browser.newPage();
+    // Clear cookies and other browsing data
+    const client = await page.target().createCDPSession();
+    await client.send("Network.clearBrowserCookies");
+    await client.send("Network.clearBrowserCache");
 
     const userAgent = new UserAgent({ deviceCategory: "desktop" });
     const randomUserAgent = userAgent.toString();
@@ -120,7 +124,13 @@ async function puppeteerInit(chatId, retries = 0) {
         throw new Error("Max retries reached");
       }
     });
-
+    // Add key-value pair to session storage
+    await page.evaluate(() => {
+      sessionStorage.setItem(
+        "oai/apps/noAuthHasDismissedSoftRateLimitModal",
+        "true"
+      );
+    });
     await stayLoggedOut(page);
 
     const checkContent = await page.$("text=" + "Get started");
