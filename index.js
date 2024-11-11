@@ -477,7 +477,11 @@ async function scrapeAndAutomateChat(chatId, prompt) {
 
     let parsedText = text.replace("ChatGPT said:\nChatGPT\n\n", "").trim();
     parsedText = parsedText.replace("\n\n4o mini", "");
-
+    if (!parsedText) {
+      parsedText = await lazyLoadingFix(page, chatSession.conversation);
+      parsedText = text.replace("ChatGPT said:\nChatGPT\n\n", "").trim();
+      parsedText = parsedText.replace("\n\n4o mini", "");
+    }
     if (
       parsedText ==
         "You've reached our limit of messages per hour. Please try again later." ||
