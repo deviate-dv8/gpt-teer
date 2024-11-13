@@ -327,15 +327,22 @@ async function lazyLoadingFix(page, conversation) {
   let text = await page
     .getByTestId(`conversation-turn-${conversation}`)
     .innerText();
-  const textCheck = text.split(" ");
-  if (
-    (textCheck[0] == "ChatGPT\n\n" && textCheck.length <= 1) ||
-    (textCheck[0] == "ChatGPT said:\nChatGPT\n\n" && textCheck.length <= 2) ||
-    (textCheck[0] == "ChatGPT said:\n" && textCheck.length <= 1)
-  ) {
+  if (!preprocessText(text)) {
     return lazyLoadingFix(page, conversation);
   }
   return text;
+}
+
+function preprocessText(text) {
+  text = text.replace("ChatGPT said:\n\n", "");
+  text = text.replace("ChatGPT said:\n", "");
+  text = text.replace("ChatGPT said:", "");
+  text = text.replace("ChatGPT\n\n", "");
+  text = text.replace("ChatGPT\n", "");
+  text = text.replace("\n\n4o mini", "");
+  text = text.replace("\n4o mini", "");
+  text = text.replace("4o mini", "");
+  return text.trim();
 }
 
 async function scrapeAndAutomateChat(chatId, prompt) {
@@ -479,14 +486,9 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       console.log(`screenshots/4parsing-text-${chatId}.png`);
     }
 
-    let parsedText = text.replace("ChatGPT said:\n\n", "").trim();
-    parsedText = parsedText.replace("ChatGPT said:\nChatGPT\n\n", "");
-    parsedText = parsedText.replace("\n\n4o mini", "");
+    let parsedText = preprocessText(text);
     if (!parsedText) {
       parsedText = await lazyLoadingFix(page, chatSession.conversation);
-      parsedText = text.replace("ChatGPT said:\n\n", "").trim();
-      parsedText = parsedText.replace("ChatGPT said:\nChatGPT\n\n", "");
-      parsedText = parsedText.replace("\n\n4o mini", "");
     }
     if (
       parsedText ==
