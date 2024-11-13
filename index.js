@@ -462,7 +462,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         `[data-testid="conversation-turn-${chatSession.conversation}"]`
       )
     );
-
+    await setTimeout(() => {}, 500);
     const textCheck = text.split(" ");
     if (textCheck[0] == "ChatGPT\n\n" && textCheck.length <= 1) {
       text = await lazyLoadingFix(page, chatSession.conversation);
@@ -475,11 +475,11 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       console.log(`screenshots/4parsing-text-${chatId}.png`);
     }
 
-    let parsedText = text.replace("ChatGPT said:\nChatGPT\n\n", "").trim();
+    let parsedText = text.replace("ChatGPT said:\n\n", "").trim();
     parsedText = parsedText.replace("\n\n4o mini", "");
     if (!parsedText) {
       parsedText = await lazyLoadingFix(page, chatSession.conversation);
-      parsedText = text.replace("ChatGPT said:\nChatGPT\n\n", "").trim();
+      parsedText = text.replace("ChatGPT said:\n\n", "").trim();
       parsedText = parsedText.replace("\n\n4o mini", "");
     }
     if (
