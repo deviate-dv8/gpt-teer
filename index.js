@@ -328,7 +328,11 @@ async function lazyLoadingFix(page, conversation) {
     .getByTestId(`conversation-turn-${conversation}`)
     .innerText();
   const textCheck = text.split(" ");
-  if (textCheck[0] == "ChatGPT\n\n" && textCheck.length <= 1) {
+  if (
+    (textCheck[0] == "ChatGPT\n\n" && textCheck.length <= 1) ||
+    (textCheck[0] == "ChatGPT said:\nChatGPT\n\n" && textCheck.length <= 2) ||
+    (textCheck[0] == "ChatGPT said:\n" && textCheck.length <= 1)
+  ) {
     return lazyLoadingFix(page, conversation);
   }
   return text;
@@ -476,10 +480,12 @@ async function scrapeAndAutomateChat(chatId, prompt) {
     }
 
     let parsedText = text.replace("ChatGPT said:\n\n", "").trim();
+    parsedText = parsedText.replace("ChatGPT said:\nChatGPT\n\n", "");
     parsedText = parsedText.replace("\n\n4o mini", "");
     if (!parsedText) {
       parsedText = await lazyLoadingFix(page, chatSession.conversation);
       parsedText = text.replace("ChatGPT said:\n\n", "").trim();
+      parsedText = parsedText.replace("ChatGPT said:\nChatGPT\n\n", "");
       parsedText = parsedText.replace("\n\n4o mini", "");
     }
     if (
