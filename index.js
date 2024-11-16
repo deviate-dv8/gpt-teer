@@ -85,6 +85,7 @@ async function puppeteerInit(chatId, retries = 0) {
 
     console.log(`Creating new page for chat ${chatId}`);
     const page = await browser.newPage();
+
     // Clear cookies and other browsing data
     const client = await page.target().createCDPSession();
     await client.send("Network.clearBrowserCookies");
@@ -100,21 +101,33 @@ async function puppeteerInit(chatId, retries = 0) {
       height: Math.floor(Math.random() * (1080 - 600 + 1)) + 600,
     });
 
+    // Randomize navigator properties
     await page.evaluateOnNewDocument(() => {
       Object.defineProperty(navigator, "platform", {
-        get: () => "Win32",
+        get: () =>
+          ["Win32", "MacIntel", "Linux x86_64"][Math.floor(Math.random() * 3)],
       });
       Object.defineProperty(navigator, "language", {
-        get: () => "en-US",
+        get: () => ["en-US", "en-GB"][Math.floor(Math.random() * 4)],
       });
       Object.defineProperty(navigator, "languages", {
-        get: () => ["en-US", "en"],
+        get: () =>
+          [
+            ["en-US", "en"],
+            ["en-GB", "en"],
+          ][Math.floor(Math.random() * 4)],
       });
       Object.defineProperty(navigator, "webdriver", {
         get: () => false,
       });
     });
 
+    // Clear browser cache
+    await page._client().send("Network.clearBrowserCache");
+    // Set the Referer header
+    await page.setExtraHTTPHeaders({
+      Referer: "https://www.chatgpt.com",
+    });
     await page.goto("https://www.chatgpt.com").catch(async (err) => {
       console.log("Re Run");
       await page.close();
@@ -353,6 +366,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
     console.log(`Processing prompt for chat ${chatId}: \n`, prompt);
     const chatSession = conversations[chatId];
     let { page } = chatSession;
+
     chatSession.conversationNo++;
     console.log(chatSession.conversationNo);
     if (chatSession.conversationNo == 20) {
