@@ -110,6 +110,8 @@ async function puppeteerInit(chatId, retries = 0) {
           height: height,
           availWidth: width,
           availHeight: height,
+          colorDepth: Math.floor(Math.random() * 24) + 1,
+          pixelDepth: Math.floor(Math.random() * 24) + 1,
         };
       },
       width,
@@ -124,7 +126,11 @@ async function puppeteerInit(chatId, retries = 0) {
       });
       Object.defineProperty(navigator, "language", {
         get: () =>
-          ["en-US", "en-GB", "fr-FR", "de-DE"][Math.floor(Math.random() * 4)],
+          [
+            "en-US",
+            "en-GB",
+            //  "fr-FR", "de-DE"
+          ][Math.floor(Math.random() * 4)],
       });
       Object.defineProperty(navigator, "languages", {
         get: () =>
@@ -132,7 +138,7 @@ async function puppeteerInit(chatId, retries = 0) {
             ["en-US", "en"],
             ["en-GB", "en"],
             ["fr-FR", "fr"],
-            ["de-DE", "de"],
+            ["de-DE", "de "],
           ][Math.floor(Math.random() * 4)],
       });
       Object.defineProperty(navigator, "webdriver", {
@@ -144,6 +150,49 @@ async function puppeteerInit(chatId, retries = 0) {
       Object.defineProperty(navigator, "deviceMemory", {
         get: () => Math.floor(Math.random() * 8) + 1,
       });
+    });
+
+    // Set geolocation
+    await page.setGeolocation({
+      latitude: parseFloat((Math.random() * 180 - 90).toFixed(6)),
+      longitude: parseFloat((Math.random() * 360 - 180).toFixed(6)),
+      accuracy: parseFloat((Math.random() * 100).toFixed(2)),
+    });
+
+    // Randomize timezone
+    const timezones = [
+      "America/New_York",
+      "Europe/London",
+      "Asia/Tokyo",
+      "Australia/Sydney",
+    ];
+    const timezone = timezones[Math.floor(Math.random() * timezones.length)];
+    await page.emulateTimezone(timezone);
+
+    // Randomize WebGL properties
+    await page.evaluateOnNewDocument(() => {
+      const getParameter = WebGLRenderingContext.prototype.getParameter;
+      WebGLRenderingContext.prototype.getParameter = function (parameter) {
+        // UNMASKED_VENDOR_WEBGL
+        if (parameter === 37445) return "Intel Inc.";
+        // UNMASKED_RENDERER_WEBGL
+        if (parameter === 37446) return "Intel Iris OpenGL Engine";
+        return getParameter(parameter);
+      };
+    });
+
+    // Randomize media devices
+    await page.evaluateOnNewDocument(() => {
+      const getUserMedia = navigator.mediaDevices.getUserMedia;
+      navigator.mediaDevices.getUserMedia = function (constraints) {
+        return new Promise((resolve, reject) => {
+          resolve({
+            getTracks: () => [],
+            getVideoTracks: () => [],
+            getAudioTracks: () => [],
+          });
+        });
+      };
     });
 
     // Clear browser cache
