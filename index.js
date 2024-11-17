@@ -91,15 +91,30 @@ async function puppeteerInit(chatId, retries = 0) {
     await client.send("Network.clearBrowserCookies");
     await client.send("Network.clearBrowserCache");
 
+    // Randomize user agent
     const userAgent = new UserAgent({ deviceCategory: "desktop" });
     const randomUserAgent = userAgent.toString();
     console.log(`Using user agent: ${randomUserAgent}`);
     await page.setUserAgent(randomUserAgent);
 
-    await page.setViewport({
-      width: Math.floor(Math.random() * (1920 - 800 + 1)) + 800,
-      height: Math.floor(Math.random() * (1080 - 600 + 1)) + 600,
-    });
+    // Randomize viewport size
+    const width = Math.floor(Math.random() * (1920 - 800 + 1)) + 800;
+    const height = Math.floor(Math.random() * (1080 - 600 + 1)) + 600;
+    await page.setViewport({ width, height });
+
+    // Randomize screen size
+    await page.evaluateOnNewDocument(
+      (width, height) => {
+        window.screen = {
+          width: width,
+          height: height,
+          availWidth: width,
+          availHeight: height,
+        };
+      },
+      width,
+      height
+    );
 
     // Randomize navigator properties
     await page.evaluateOnNewDocument(() => {
@@ -108,17 +123,26 @@ async function puppeteerInit(chatId, retries = 0) {
           ["Win32", "MacIntel", "Linux x86_64"][Math.floor(Math.random() * 3)],
       });
       Object.defineProperty(navigator, "language", {
-        get: () => ["en-US", "en-GB"][Math.floor(Math.random() * 4)],
+        get: () =>
+          ["en-US", "en-GB", "fr-FR", "de-DE"][Math.floor(Math.random() * 4)],
       });
       Object.defineProperty(navigator, "languages", {
         get: () =>
           [
             ["en-US", "en"],
             ["en-GB", "en"],
+            ["fr-FR", "fr"],
+            ["de-DE", "de"],
           ][Math.floor(Math.random() * 4)],
       });
       Object.defineProperty(navigator, "webdriver", {
         get: () => false,
+      });
+      Object.defineProperty(navigator, "hardwareConcurrency", {
+        get: () => Math.floor(Math.random() * 8) + 1,
+      });
+      Object.defineProperty(navigator, "deviceMemory", {
+        get: () => Math.floor(Math.random() * 8) + 1,
       });
     });
 
