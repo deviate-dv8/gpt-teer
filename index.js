@@ -137,9 +137,34 @@ async function puppeteerInit(chatId, retries = 0) {
           [
             ["en-US", "en"],
             ["en-GB", "en"],
-            ["fr-FR", "fr"],
-            ["de-DE", "de "],
-          ][Math.floor(Math.random() * 4)],
+            ["fr-FR", "en"],
+            ["de-DE", "en"],
+            ["es-ES", "en"],
+            ["it-IT", "en"],
+            ["nl-NL", "en"],
+            ["pt-PT", "en"],
+            ["ru-RU", "en"],
+            ["zh-CN", "en"],
+          ][Math.floor(Math.random() * 10)],
+      });
+      Object.defineProperty(navigator, "vendor", {
+        get: () =>
+          ["Google Inc.", "Apple Computer, Inc.", "Mozilla Foundation"][
+            Math.floor(Math.random() * 3)
+          ],
+      });
+      Object.defineProperty(navigator, "product", {
+        get: () => ["Gecko", "WebKit", "Blink"][Math.floor(Math.random() * 3)],
+      });
+      Object.defineProperty(navigator, "appVersion", {
+        get: () =>
+          `5.0 (${navigator.platform}) AppleWebKit/${
+            Math.floor(Math.random() * 600) + 500
+          }.0 (KHTML, like Gecko) Chrome/${
+            Math.floor(Math.random() * 100) + 50
+          }.0.${Math.floor(Math.random() * 4000) + 1000}.0 Safari/${
+            Math.floor(Math.random() * 600) + 500
+          }.0`,
       });
       Object.defineProperty(navigator, "webdriver", {
         get: () => false,
@@ -165,36 +190,56 @@ async function puppeteerInit(chatId, retries = 0) {
       "Europe/London",
       "Asia/Tokyo",
       "Australia/Sydney",
+      "America/Los_Angeles",
+      "Europe/Berlin",
+      "Asia/Shanghai",
+      "America/Chicago",
+      "Europe/Paris",
+      "Asia/Singapore",
+      "Africa/Johannesburg",
+      "America/Sao_Paulo",
+      "Asia/Dubai",
+      "Asia/Kolkata",
+      "Pacific/Auckland",
     ];
     const timezone = timezones[Math.floor(Math.random() * timezones.length)];
     await page.emulateTimezone(timezone);
 
     // Randomize WebGL properties
     await page.evaluateOnNewDocument(() => {
+      const vendors = ["Intel Inc.", "NVIDIA Corporation", "AMD Inc."];
+      const renderers = [
+        "Intel Iris OpenGL Engine",
+        "NVIDIA GeForce GTX",
+        "AMD Radeon Pro",
+      ];
+
       const getParameter = WebGLRenderingContext.prototype.getParameter;
       WebGLRenderingContext.prototype.getParameter = function (parameter) {
-        // UNMASKED_VENDOR_WEBGL
-        if (parameter === 37445) return "Intel Inc.";
-        // UNMASKED_RENDERER_WEBGL
-        if (parameter === 37446) return "Intel Iris OpenGL Engine";
+        if (parameter === 37445)
+          return vendors[Math.floor(Math.random() * vendors.length)]; // UNMASKED_VENDOR_WEBGL
+        if (parameter === 37446)
+          return renderers[Math.floor(Math.random() * renderers.length)]; // UNMASKED_RENDERER_WEBGL
         return getParameter(parameter);
       };
     });
-
     // Randomize media devices
     await page.evaluateOnNewDocument(() => {
-      const getUserMedia = navigator.mediaDevices.getUserMedia;
-      navigator.mediaDevices.getUserMedia = function (constraints) {
-        return new Promise((resolve, reject) => {
-          resolve({
-            getTracks: () => [],
-            getVideoTracks: () => [],
-            getAudioTracks: () => [],
-          });
-        });
-      };
-    });
+      const mediaDevices = [
+        { label: "External Webcam", kind: "videoinput" },
+        { label: "Built-in Microphone", kind: "audioinput" },
+        { label: "Virtual Microphone", kind: "audioinput" },
+        { label: "Screen Capture", kind: "videoinput" },
+      ];
 
+      navigator.mediaDevices.enumerateDevices = async () =>
+        mediaDevices.map((device) => ({
+          deviceId: Math.random().toString(36).substr(2, 10),
+          label: device.label,
+          kind: device.kind,
+          groupId: Math.random().toString(36).substr(2, 10),
+        }));
+    });
     // Clear browser cache
     await page._client().send("Network.clearBrowserCache");
     // Set the Referer header
