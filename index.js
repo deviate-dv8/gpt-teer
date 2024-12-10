@@ -178,32 +178,32 @@ async function puppeteerInit(chatId, retries = 0) {
     });
 
     // Set geolocation
-    await page.setGeolocation({
-      latitude: parseFloat((Math.random() * 180 - 90).toFixed(6)),
-      longitude: parseFloat((Math.random() * 360 - 180).toFixed(6)),
-      accuracy: parseFloat((Math.random() * 100).toFixed(2)),
-    });
+    // await page.setGeolocation({
+    //   latitude: parseFloat((Math.random() * 180 - 90).toFixed(6)),
+    //   longitude: parseFloat((Math.random() * 360 - 180).toFixed(6)),
+    //   accuracy: parseFloat((Math.random() * 100).toFixed(2)),
+    // });
 
     // Randomize timezone
-    const timezones = [
-      "America/New_York",
-      "Europe/London",
-      "Asia/Tokyo",
-      "Australia/Sydney",
-      "America/Los_Angeles",
-      "Europe/Berlin",
-      "Asia/Shanghai",
-      "America/Chicago",
-      "Europe/Paris",
-      "Asia/Singapore",
-      "Africa/Johannesburg",
-      "America/Sao_Paulo",
-      "Asia/Dubai",
-      "Asia/Kolkata",
-      "Pacific/Auckland",
-    ];
-    const timezone = timezones[Math.floor(Math.random() * timezones.length)];
-    await page.emulateTimezone(timezone);
+    // const timezones = [
+    //   "America/New_York",
+    //   "Europe/London",
+    //   "Asia/Tokyo",
+    //   "Australia/Sydney",
+    //   "America/Los_Angeles",
+    //   "Europe/Berlin",
+    //   "Asia/Shanghai",
+    //   "America/Chicago",
+    //   "Europe/Paris",
+    //   "Asia/Singapore",
+    //   "Africa/Johannesburg",
+    //   "America/Sao_Paulo",
+    //   "Asia/Dubai",
+    //   "Asia/Kolkata",
+    //   "Pacific/Auckland",
+    // ];
+    // const timezone = timezones[Math.floor(Math.random() * timezones.length)];
+    // await page.emulateTimezone(timezone);
 
     // Randomize WebGL properties
     await page.evaluateOnNewDocument(() => {
