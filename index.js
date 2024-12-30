@@ -5,6 +5,7 @@ import UserAgent from "user-agents";
 import dotenv from "dotenv";
 import express from "express";
 import process from "process";
+import fs from "fs";
 
 dotenv.config();
 
@@ -296,6 +297,7 @@ async function puppeteerInit(chatId, retries = 0) {
       }, INACTIVITY_TIMEOUT),
     };
     if (screenshot) {
+      ensureScreenshotsDir();
       await page.screenshot({
         path: `screenshots/init-${chatId}.png`,
       });
@@ -493,6 +495,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
     }
     await stayLoggedOut(page);
     if (screenshot) {
+      ensureScreenshotsDir();
       await page.screenshot({
         path: `screenshots/1before-writing-${chatId}.png`,
       });
@@ -504,6 +507,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         : 60000,
     });
     if (screenshot) {
+      ensureScreenshotsDir();
       await page.screenshot({
         path: `screenshots/2writing-before-clicking-${chatId}.png`,
       });
@@ -523,6 +527,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         : 60000,
     });
     if (screenshot) {
+      ensureScreenshotsDir();
       await page.screenshot({
         path: `screenshots/3after-clicking-${chatId}.png`,
       });
@@ -578,6 +583,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       return "You've reached our limit of messages per hour. Please try again later.";
     }
     if (screenshot) {
+      ensureScreenshotsDir();
       await page.screenshot({
         path: `screenshots/4after-streaming-${chatId}.png`,
       });
@@ -612,6 +618,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
     }
 
     if (screenshot) {
+      ensureScreenshotsDir();
       await page.screenshot({
         path: `screenshots/4parsing-text-${chatId}.png`,
       });
@@ -699,3 +706,9 @@ browserInit().then(() => {
     console.log(`Server is listening on port ${port}`);
   });
 });
+
+function ensureScreenshotsDir() {
+  if (!fs.existsSync("screenshots")) {
+    fs.mkdirSync("screenshots");
+  }
+}
