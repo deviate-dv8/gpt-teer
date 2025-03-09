@@ -58,8 +58,16 @@ async function browserInit() {
         // pipe: true,
       });
 
-      // Close any existing tabs except the first one
-      await closeExtraTabs();
+      // When first launching, only close tabs if there are more than 2
+      // This preserves the initial tab which might be needed
+      const pages = await browser.pages();
+      if (pages.length > 2) {
+        console.log(`Closing ${pages.length - 1} initial extra tabs...`);
+        // Keep the first page
+        for (let i = 1; i < pages.length; i++) {
+          await pages[i].close();
+        }
+      }
     }
   } catch {
     numErr++;
@@ -69,21 +77,66 @@ async function browserInit() {
   }
 }
 
-// Add this function to close extra tabs
+// Replace the closeExtraTabs function with this improved version
 async function closeExtraTabs() {
   if (!browser) return;
 
   try {
     const pages = await browser.pages();
-    // Keep only the first tab if there are multiple tabs
-    if (pages.length > 1) {
-      console.log(`Closing ${pages.length - 1} extra tabs`);
-      for (let i = 1; i < pages.length; i++) {
-        await pages[i].close();
+    if (pages.length <= 1) return; // No extra tabs to close
+
+    console.log(
+      `Found ${pages.length} browser tabs, checking which ones to close...`
+    );
+
+    // Get all active page objects from conversations
+    const activePages = new Set();
+    Object.values(conversations).forEach((conversation) => {
+      if (conversation && conversation.page) {
+        activePages.add(conversation.page);
+      }
+    });
+
+    // Keep track of how many tabs were closed
+    let closedCount = 0;
+
+    // Close only orphaned pages (pages not in active conversations)
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+
+      // Skip the first page (default tab) if there are no active conversations yet
+      if (i === 0 && activePages.size === 0) continue;
+
+      // Check if this page is being used in an active conversation
+      let isActive = false;
+      activePages.forEach((activePage) => {
+        try {
+          if (page === activePage) {
+            isActive = true;
+          }
+        } catch (e) {
+          // Handle case where page might be detached
+        }
+      });
+
+      // Close the page if it's not active
+      if (!isActive) {
+        try {
+          await page.close();
+          closedCount++;
+        } catch (error) {
+          console.error("Error closing unused tab:", error.message);
+        }
       }
     }
+
+    if (closedCount > 0) {
+      console.log(`Closed ${closedCount} orphaned browser tabs`);
+    } else {
+      console.log("No orphaned tabs to close");
+    }
   } catch (error) {
-    console.error("Error while closing extra tabs:", error);
+    console.error("Error in closeExtraTabs:", error.message);
   }
 }
 
@@ -93,12 +146,19 @@ async function puppeteerInit(chatId, retries = 0) {
   if (stopFetching) return;
 
   try {
-    // Close any extra tabs before creating a new one
-    await closeExtraTabs();
+    // Don't close tabs before checking for existing sessions
+    // This avoids disrupting other active sessions
 
     if (conversations[chatId] && conversations[chatId].page) {
       console.log(`Reusing existing page for chat ${chatId}`);
       return;
+    }
+
+    // Only run closeExtraTabs() periodically or when explicitly needed
+    // rather than on each new session initialization
+    if (retries === 0 && Math.random() < 0.2) {
+      // 20% chance to clean up tabs
+      await closeExtraTabs();
     }
 
     console.log(`Creating new page for chat ${chatId}`);
