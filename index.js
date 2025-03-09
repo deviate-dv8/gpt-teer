@@ -29,21 +29,14 @@ let stopFetching = false;
 
 function signalHandler(signal) {
   console.log(`Received ${signal}. Initiating graceful shutdown...`);
-  stopFetching = true;
-  if (browser) {
-    browser
-      .close()
-      .then(() => {
-        console.log("Browser closed.");
-        process.exit(0);
-      })
-      .catch((err) => {
-        console.error("Error closing browser:", err);
-        process.exit(1);
-      });
-  } else {
-    process.exit(0);
-  }
+  cleanupBeforeExit()
+    .then(() => {
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error("Error during cleanup:", err);
+      process.exit(1);
+    });
 }
 
 // Handle SIGINT signals for Ctrl+C
@@ -64,6 +57,9 @@ async function browserInit() {
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
         // pipe: true,
       });
+
+      // Close any existing tabs except the first one
+      await closeExtraTabs();
     }
   } catch {
     numErr++;
@@ -73,12 +69,33 @@ async function browserInit() {
   }
 }
 
+// Add this function to close extra tabs
+async function closeExtraTabs() {
+  if (!browser) return;
+
+  try {
+    const pages = await browser.pages();
+    // Keep only the first tab if there are multiple tabs
+    if (pages.length > 1) {
+      console.log(`Closing ${pages.length - 1} extra tabs`);
+      for (let i = 1; i < pages.length; i++) {
+        await pages[i].close();
+      }
+    }
+  } catch (error) {
+    console.error("Error while closing extra tabs:", error);
+  }
+}
+
 const MAX_RETRIES = 10;
 
 async function puppeteerInit(chatId, retries = 0) {
   if (stopFetching) return;
 
   try {
+    // Close any extra tabs before creating a new one
+    await closeExtraTabs();
+
     if (conversations[chatId] && conversations[chatId].page) {
       console.log(`Reusing existing page for chat ${chatId}`);
       return;
@@ -296,6 +313,10 @@ async function puppeteerInit(chatId, retries = 0) {
         closeChatSession(chatId);
       }, INACTIVITY_TIMEOUT),
     };
+
+    // Bring page to front regardless of screenshot setting
+    await page.bringToFront();
+
     if (screenshot) {
       ensureScreenshotsDir();
       await page.screenshot({
@@ -308,6 +329,9 @@ async function puppeteerInit(chatId, retries = 0) {
   } catch (error) {
     numErr++;
     await handleGlobalError();
+    // Try to close any potentially problematic tabs
+    await closeExtraTabs();
+
     if (retries < MAX_RETRIES) {
       console.log(
         `Retrying puppeteerInit for chat ${chatId}, attempt ${retries + 1}`
@@ -322,9 +346,16 @@ async function puppeteerInit(chatId, retries = 0) {
 async function closeChatSession(chatId) {
   if (conversations[chatId]) {
     console.log(`Closing chat session ${chatId} due to inactivity`);
-    await conversations[chatId].page.close();
+    try {
+      await conversations[chatId].page.close();
+    } catch (error) {
+      console.error(`Error closing page for chat ${chatId}:`, error);
+    }
     delete conversations[chatId];
     delete requestQueues[chatId];
+
+    // After closing a chat session, check and clean up any extra tabs
+    await closeExtraTabs();
   }
 }
 
@@ -494,6 +525,10 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       return "You've reached our limit of messages per hour. Please try again later.";
     }
     await stayLoggedOut(page);
+
+    // Bring page to front regardless of screenshot setting
+    await page.bringToFront();
+
     if (screenshot) {
       ensureScreenshotsDir();
       await page.screenshot({
@@ -506,6 +541,10 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         ? parseInt(process.env.WAIT_TIMEOUT)
         : 60000,
     });
+
+    // Bring page to front before clicking
+    await page.bringToFront();
+
     if (screenshot) {
       ensureScreenshotsDir();
       await page.screenshot({
@@ -519,6 +558,9 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         ? parseInt(process.env.WAIT_TIMEOUT)
         : 60000,
     });
+
+    // Bring page to front before clicking
+    await page.bringToFront();
 
     // Then click the button
     await page.click('button[aria-label="Send prompt"]', {
@@ -582,6 +624,10 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       await closeChatSession(chatId);
       return "You've reached our limit of messages per hour. Please try again later.";
     }
+
+    // Bring page to front before checking response
+    await page.bringToFront();
+
     if (screenshot) {
       ensureScreenshotsDir();
       await page.screenshot({
@@ -616,6 +662,9 @@ async function scrapeAndAutomateChat(chatId, prompt) {
     if (textCheck[0] == "ChatGPT\n\n" && textCheck.length <= 1) {
       text = await lazyLoadingFix(page, chatSession.conversation);
     }
+
+    // Bring page to front before text extraction
+    await page.bringToFront();
 
     if (screenshot) {
       ensureScreenshotsDir();
@@ -661,13 +710,24 @@ async function handleGlobalError() {
   if (process.env.RESTART_BROWSER == "true") {
     console.log("Err counter: ", numErr);
     if (numErr > 1) {
-      await browser.close();
-      browser = await puppeteer.launch();
+      try {
+        await browser.close();
+      } catch (error) {
+        console.error("Error closing browser during restart:", error);
+      }
+      browser = await puppeteer.launch({
+        headless,
+        browser: browserType,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
       conversations = {};
       requestQueues = {};
       numErr = 0;
       console.log("Browser Restart");
     }
+  } else {
+    // Even if we don't restart the browser, try to clean up tabs
+    await closeExtraTabs();
   }
 }
 
@@ -712,3 +772,31 @@ function ensureScreenshotsDir() {
     fs.mkdirSync("screenshots");
   }
 }
+
+// Add cleanup function to call when the process is shutting down
+async function cleanupBeforeExit() {
+  console.log("Cleaning up before exit...");
+  stopFetching = true;
+
+  // Close all chat sessions properly
+  const chatIds = Object.keys(conversations);
+  for (const chatId of chatIds) {
+    await closeChatSession(chatId);
+  }
+
+  if (browser) {
+    try {
+      await browser.close();
+      console.log("Browser closed successfully");
+    } catch (error) {
+      console.error("Error closing browser during exit:", error);
+    }
+  }
+}
+
+// Add a periodic cleanup task to run every few minutes
+const TAB_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+setInterval(async () => {
+  console.log("Running periodic tab cleanup");
+  await closeExtraTabs();
+}, TAB_CLEANUP_INTERVAL);
