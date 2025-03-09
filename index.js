@@ -57,17 +57,7 @@ async function browserInit() {
         args: ["--no-sandbox", "--disable-setuid-sandbox"],
         // pipe: true,
       });
-
-      // When first launching, only close tabs if there are more than 2
-      // This preserves the initial tab which might be needed
-      const pages = await browser.pages();
-      if (pages.length > 2) {
-        console.log(`Closing ${pages.length - 1} initial extra tabs...`);
-        // Keep the first page
-        for (let i = 1; i < pages.length; i++) {
-          await pages[i].close();
-        }
-      }
+      // Removed tab closing code
     }
   } catch {
     numErr++;
@@ -77,89 +67,18 @@ async function browserInit() {
   }
 }
 
-// Replace the closeExtraTabs function with this improved version
-async function closeExtraTabs() {
-  if (!browser) return;
-
-  try {
-    const pages = await browser.pages();
-    if (pages.length <= 1) return; // No extra tabs to close
-
-    console.log(
-      `Found ${pages.length} browser tabs, checking which ones to close...`
-    );
-
-    // Get all active page objects from conversations
-    const activePages = new Set();
-    Object.values(conversations).forEach((conversation) => {
-      if (conversation && conversation.page) {
-        activePages.add(conversation.page);
-      }
-    });
-
-    // Keep track of how many tabs were closed
-    let closedCount = 0;
-
-    // Close only orphaned pages (pages not in active conversations)
-    for (let i = 0; i < pages.length; i++) {
-      const page = pages[i];
-
-      // Skip the first page (default tab) if there are no active conversations yet
-      if (i === 0 && activePages.size === 0) continue;
-
-      // Check if this page is being used in an active conversation
-      let isActive = false;
-      activePages.forEach((activePage) => {
-        try {
-          if (page === activePage) {
-            isActive = true;
-          }
-        } catch (e) {
-          // Handle case where page might be detached
-        }
-      });
-
-      // Close the page if it's not active
-      if (!isActive) {
-        try {
-          await page.close();
-          closedCount++;
-        } catch (error) {
-          console.error("Error closing unused tab:", error.message);
-        }
-      }
-    }
-
-    if (closedCount > 0) {
-      console.log(`Closed ${closedCount} orphaned browser tabs`);
-    } else {
-      console.log("No orphaned tabs to close");
-    }
-  } catch (error) {
-    console.error("Error in closeExtraTabs:", error.message);
-  }
-}
-
 const MAX_RETRIES = 10;
 
 async function puppeteerInit(chatId, retries = 0) {
   if (stopFetching) return;
 
   try {
-    // Don't close tabs before checking for existing sessions
-    // This avoids disrupting other active sessions
-
     if (conversations[chatId] && conversations[chatId].page) {
       console.log(`Reusing existing page for chat ${chatId}`);
       return;
     }
 
-    // Only run closeExtraTabs() periodically or when explicitly needed
-    // rather than on each new session initialization
-    if (retries === 0 && Math.random() < 0.2) {
-      // 20% chance to clean up tabs
-      await closeExtraTabs();
-    }
+    // Removed closeExtraTabs call
 
     console.log(`Creating new page for chat ${chatId}`);
     const page = await browser.newPage();
@@ -389,8 +308,8 @@ async function puppeteerInit(chatId, retries = 0) {
   } catch (error) {
     numErr++;
     await handleGlobalError();
-    // Try to close any potentially problematic tabs
-    await closeExtraTabs();
+
+    // Removed closeExtraTabs call
 
     if (retries < MAX_RETRIES) {
       console.log(
@@ -414,8 +333,7 @@ async function closeChatSession(chatId) {
     delete conversations[chatId];
     delete requestQueues[chatId];
 
-    // After closing a chat session, check and clean up any extra tabs
-    await closeExtraTabs();
+    // Removed closeExtraTabs call
   }
 }
 
@@ -785,10 +703,8 @@ async function handleGlobalError() {
       numErr = 0;
       console.log("Browser Restart");
     }
-  } else {
-    // Even if we don't restart the browser, try to clean up tabs
-    await closeExtraTabs();
   }
+  // Removed closeExtraTabs call
 }
 
 app.use((req, res, next) => {
@@ -854,9 +770,9 @@ async function cleanupBeforeExit() {
   }
 }
 
-// Add a periodic cleanup task to run every few minutes
-const TAB_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
-setInterval(async () => {
-  console.log("Running periodic tab cleanup");
-  await closeExtraTabs();
-}, TAB_CLEANUP_INTERVAL);
+// Remove the periodic cleanup interval
+// const TAB_CLEANUP_INTERVAL = 5 * 60 * 1000; // 5 minutes
+// setInterval(async () => {
+//   console.log("Running periodic tab cleanup");
+//   await closeExtraTabs();
+// }, TAB_CLEANUP_INTERVAL);
