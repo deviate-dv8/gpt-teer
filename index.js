@@ -284,7 +284,7 @@ async function puppeteerInit(chatId, retries = 0) {
 
     conversations[chatId] = {
       page,
-      conversation: 1,
+      conversation: 0,
       conversationNo: 0,
       ready: true,
       lastActivity: Date.now(),
@@ -614,7 +614,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
       console.log(`screenshots/4after-streaming-${chatId}.png`);
     }
     chatSession.conversation += 2;
-    if (chatSession.conversation == 3) {
+    if (chatSession.conversation == 2) {
       let text1 = await page.evaluate(
         (el) => el.innerText,
         await page.$('[data-testid="conversation-turn-2"]')
@@ -628,13 +628,19 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         await closeChatSession(chatId);
       }
     }
-
-    let text = await page.evaluate(
-      (el) => el.innerText,
-      await page.$(
-        `[data-testid="conversation-turn-${chatSession.conversation}"]`
-      )
+    console.log("this is called");
+    const el = await page.$(
+      `[data-testid="conversation-turn-${chatSession.conversation}"]`
     );
+    let text;
+    if (el) {
+      text = await page.evaluate((el) => el.innerText, el);
+    } else {
+      text = "";
+      console.warn(
+        `Element [data-testid="conversation-turn-${chatSession.conversation}"] not found`
+      );
+    }
     await setTimeout(() => {}, 500);
     const textCheck = text.split(" ");
     if (textCheck[0] == "ChatGPT\n\n" && textCheck.length <= 1) {
