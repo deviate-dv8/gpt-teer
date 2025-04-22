@@ -628,7 +628,7 @@ async function scrapeAndAutomateChat(chatId, prompt) {
         await closeChatSession(chatId);
       }
     }
-    console.log("this is called");
+    // console.log("this is called");
     const el = await page.$(
       `[data-testid="conversation-turn-${chatSession.conversation}"]`
     );
